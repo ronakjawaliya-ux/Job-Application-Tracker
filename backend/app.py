@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
@@ -56,10 +58,23 @@ def create_application():
             "error": "Company and position are required"
         }), 400
 
+    application_date = None
+
+    if data.get("application_date"):
+        try:
+            application_date = datetime.fromisoformat(
+                data["application_date"]
+            )
+        except ValueError:
+            return jsonify({
+                "error": "application_date must be a valid ISO date/time"
+            }), 400
+
     application = JobApplication(
         company=data["company"],
         position=data["position"],
         status=data.get("status", "Applied"),
+        application_date=application_date,
         location=data.get("location"),
         job_type=data.get("job_type"),
         salary=data.get("salary"),
@@ -108,6 +123,19 @@ def update_application(application_id):
 
     if "status" in data:
         application.status = data["status"]
+
+    if "application_date" in data:
+        if data["application_date"]:
+            try:
+                application.application_date = datetime.fromisoformat(
+                    data["application_date"]
+                )
+            except ValueError:
+                return jsonify({
+                    "error": "application_date must be a valid ISO date/time"
+                }), 400
+        else:
+            application.application_date = None
 
     if "location" in data:
         application.location = data["location"]
