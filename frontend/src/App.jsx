@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
@@ -28,6 +28,17 @@ function App() {
       location: "Bangalore",
     },
   ]);
+  
+  useEffect(() => {
+    fetch("http://127.0.0.1:5000/api/applications")
+      .then((response) => response.json())
+      .then((data) => {
+        setApplications(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching applications:", error);
+      });
+  }, []);
 
   const [showForm, setShowForm] = useState(false);
 
@@ -46,25 +57,52 @@ function App() {
     });
   };
 
-  const addApplication = (e) => {
+  const addApplication = async (e) => {
     e.preventDefault();
 
     const newApplication = {
-      id: Date.now(),
-      ...formData,
+      company: formData.company,
+      position: formData.role,
+      status: formData.status,
+      application_date: formData.date,
+      location: formData.location,
     };
 
-    setApplications([...applications, newApplication]);
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:5000/api/applications",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newApplication),
+        }
+      );
 
-    setFormData({
-      company: "",
-      role: "",
-      status: "Applied",
-      date: "",
-      location: "",
-    });
+      if (!response.ok) {
+        throw new Error("Failed to add application");
+      }
 
-    setShowForm(false);
+      const data = await response.json();
+
+      setApplications((currentApplications) => [
+        data,
+        ...currentApplications,
+      ]);
+
+      setFormData({
+        company: "",
+        role: "",
+        status: "Applied",
+        date: "",
+        location: "",
+      });
+
+      setShowForm(false);
+    } catch (error) {
+      console.error("Error adding application:", error);
+    }
   };
 
   const deleteApplication = (id) => {
@@ -237,7 +275,7 @@ function App() {
                       {application.company}
                     </td>
 
-                    <td>{application.role}</td>
+                    <td>{application.position}</td>
 
                     <td>{application.location || "—"}</td>
 
@@ -251,7 +289,7 @@ function App() {
                       </span>
                     </td>
 
-                    <td>{application.date}</td>
+                    <td>{application.application_date?.split("T")[0]}</td>
 
                     <td>
                       <button
