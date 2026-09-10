@@ -105,10 +105,25 @@ function App() {
     }
   };
 
-  const deleteApplication = (id) => {
-    setApplications(
-      applications.filter((application) => application.id !== id)
-    );
+  const deleteApplication = async (id) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/api/applications/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+      throw new Error("Failed to delete application");
+      }
+
+      setApplications((currentApplications) =>
+        currentApplications.filter((application) => application.id !== id)
+      );
+    } catch (error) {
+      console.error("Error deleting application:", error);
+    }
   };
 
   const totalApplications = applications.length;
