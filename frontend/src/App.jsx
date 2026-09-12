@@ -41,6 +41,7 @@ function App() {
   }, []);
 
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
   const [formData, setFormData] = useState({
     company: "",
@@ -104,6 +105,58 @@ function App() {
       console.error("Error adding application:", error);
     }
   };
+  
+
+  const updateApplication = async (e) => {
+    e.preventDefault();
+
+    const updatedApplication = {
+      company: formData.company,
+      position: formData.role,
+      status: formData.status,
+      application_date: formData.date,
+      location: formData.location,
+    };
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/api/applications/${editingId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedApplication),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update application");
+      }
+
+      const data = await response.json();
+
+      setApplications((currentApplications) =>
+        currentApplications.map((application) =>
+          application.id === editingId ? data : application
+        )
+      );
+
+      setFormData({
+        company: "",
+        role: "",
+        status: "Applied",
+        date: "",
+        location: "",
+      });
+
+      setEditingId(null);
+      setShowForm(false);
+    } catch (error) {
+      console.error("Error updating application:", error);
+    }
+  };
+
 
   const deleteApplication = async (id) => {
     try {
@@ -195,9 +248,9 @@ function App() {
 
         {showForm && (
           <section className="form-card">
-            <h2>Add New Application</h2>
+            <h2>{editingId ? "Edit Application" : "Add New Application"}</h2>
 
-            <form onSubmit={addApplication}>
+            <form onSubmit={editingId ? updateApplication : addApplication}>
               <div className="form-grid">
                 <input
                   type="text"
@@ -307,6 +360,25 @@ function App() {
                     <td>{application.application_date?.split("T")[0]}</td>
 
                     <td>
+                      <button
+                        className="edit-button"
+                        onClick={() => {
+                          setEditingId(application.id);
+                          setFormData({
+                            company: application.company,
+                            role: application.position,
+                            status: application.status,
+                            date: application.application_date
+                              ? application.application_date.split("T")[0]
+                              : "",
+                            location: application.location || "",
+                          });
+                          setShowForm(true);
+                        }}
+                      >
+                        Edit
+                      </button>
+
                       <button
                         className="delete-button"
                         onClick={() => deleteApplication(application.id)}
